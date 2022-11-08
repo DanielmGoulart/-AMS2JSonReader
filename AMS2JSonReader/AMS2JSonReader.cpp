@@ -53,7 +53,7 @@ int main()
     string inputString;
 
     cout << "Informe o nome do arquivo a ser criado: ";
-    cin >> inputString;
+    std::cin >> inputString;
 
     inputString += ".csv";
 
@@ -62,9 +62,17 @@ int main()
     fileOut.imbue(std::locale(fileOut.getloc(), new std::codecvt_utf8_utf16<wchar_t>));
     fileOut << "RefId;Nome;Volta" << std::endl;
 
+    string out;
+    string line;
+    while (std::getline(f, line))
+    {
+        if (line.substr(0, 2) != "//" && line.substr(0, 2) != "\r\n")
+            out += line;
+    }
+
     try 
     {
-        json data = json::parse(f);
+        json data = json::parse(out);
         json hist = data["stats"]["history"];
         //auto e = hist.find("members");
         //std::cout << e.value();
@@ -138,8 +146,8 @@ int main()
     cout << std::endl << "Arquivo criado com sucesso!" << std::endl;
 
 exit: 
-    cin.get();
-    cin.get();
+    std::cin.get();
+    std::cin.get();
 
     return 0;
 }
