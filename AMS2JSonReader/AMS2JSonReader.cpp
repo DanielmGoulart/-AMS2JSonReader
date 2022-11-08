@@ -70,16 +70,20 @@ int main()
             out += line;
     }
 
+    f.close();
+
     try 
     {
         json data = json::parse(out);
         json hist = data["stats"]["history"];
+        json players = data["stats"]["players"];
         //auto e = hist.find("members");
         //std::cout << e.value();
+        std::map<int, std::string> refidMap;
+        std::map<std::string, std::string> steamidMap;
+
         for (auto it = hist.begin(); it != hist.end(); ++it)
         {
-            std::map<int, std::string> players;
-
             json participants = (*it)["participants"];
             for (auto partit = participants.begin(); partit != participants.end(); ++partit)
             {
@@ -87,7 +91,7 @@ int main()
                 auto ref = (*partit).find("RefId");
                 int r = ref.value();
                 //cout << " Nome: " << name.value() << " RefId: " << r << std::endl;
-                players.insert_or_assign( r, name );
+                refidMap.insert_or_assign( r, name );
             }
 
             json members = (*it)["members"];
@@ -97,7 +101,7 @@ int main()
                 int chave = std::stoi(memberit.key());
                 std::string name = (*memberit).find("name").value();
                 //cout << " Nome: " << name.value() << std::endl;
-                players.insert_or_assign( chave, name );
+                refidMap.insert_or_assign( chave, name );
 
             }
 
@@ -124,9 +128,9 @@ int main()
                             {
                                 json l = (*it3)["LapTime"];
                                 int n = *l.begin();
-                                std::cout << "Refid: " << *refid << " Nome: " << players[*refid] << " Volta: " << formataVolta(n) << std::endl;
+                                std::cout << "Refid: " << *refid << " Nome: " << refidMap[*refid] << " Volta: " << formataVolta(n) << std::endl;
                                 int s = *refid;
-                                fileOut << std::to_string(s).c_str() << ";" << players[*refid].c_str() << ";" << formataVolta(n).c_str() <<  std::endl;
+                                fileOut << std::to_string(s).c_str() << ";" << refidMap[*refid].c_str() << ";" << formataVolta(n).c_str() <<  std::endl;
                             }
                         }
                     }
