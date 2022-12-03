@@ -1,5 +1,6 @@
 {
     "Delay": 900,
     "OutputDir": "D:\\testes\\",
-    "OnlyFastestLap":  true
+    "OnlyFastestLap": true,
+    "LapInMinutes": true
 }

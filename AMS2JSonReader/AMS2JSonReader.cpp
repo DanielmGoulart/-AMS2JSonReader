@@ -48,6 +48,8 @@ std::string formataVolta(int n)
     return s;
 }
 
+
+
 int main()
 {
     std::ifstream conf("json_reader_config.json");
@@ -64,6 +66,30 @@ int main()
         int time = data["Delay"];
         std::string outdir = data["OutputDir"];
         bool fastestLapOnly = data["OnlyFastestLap"];
+        bool lapInMinutes = data["LapInMinutes"];
+
+        json vehiclesjson = json::parse(std::string(vehicles));
+        json tracksjson = json::parse(std::string(tracks));
+
+        json tracklistjson = tracksjson["response"]["list"];
+        json vehiclelistjson = vehiclesjson["response"]["list"];
+
+        std::map<int64_t, std::string> vehicleList;
+        std::map<int64_t, std::string> trackList;
+
+        for (auto trackit = tracklistjson.begin(); trackit != tracklistjson.end(); ++trackit)
+        {
+            int64_t id = (*trackit)["id"];
+            std::string name = (*trackit)["name"];
+            trackList.insert_or_assign(id, name);
+        }
+        for (auto vehicleit = vehiclelistjson.begin(); vehicleit != vehiclelistjson.end(); ++vehicleit)
+        {
+            int64_t id = (*vehicleit)["id"];
+            std::string name = (*vehicleit)["name"];
+            vehicleList.insert_or_assign(id, name);
+        }
+
 
         int notFirstBatch = 0;
 
@@ -186,12 +212,20 @@ int main()
                         fastestLapIndex = index;
 
                     totalLaps++;
-
-                    if(!fastestLapOnly)
-                        laps[index] = json::object({ {"ValidLap", l->validLap}, {"LapTime", l->lapTime}, {"Sector1", l->sector1}, {"Sector2", l->sector2}, {"Sector3", l->sector3}, {"Vehicle", l->vehicle}, {"Track", l->track} });
+                    
+                    if (!fastestLapOnly) {
+                        if(lapInMinutes)
+                            laps[index] = json::object({ {"ValidLap", l->validLap}, {"LapTime", formataVolta(l->lapTime)}, {"Sector1", formataVolta(l->sector1)}, {"Sector2", formataVolta(l->sector2)}, {"Sector3", formataVolta(l->sector3)}, {"Vehicle", vehicleList[l->vehicle]}, {"Track", trackList[l->track]} });
+                        else
+                            laps[index] = json::object({ {"ValidLap", l->validLap}, {"LapTime", l->lapTime}, {"Sector1", l->sector1}, {"Sector2", l->sector2}, {"Sector3", l->sector3}, {"Vehicle", vehicleList[l->vehicle]}, {"Track", trackList[l->track]} });
+                    }
                 }
-                if(fastestLapOnly)
-                    laps[0] = json::object({ {"ValidLap", i->second[fastestLapIndex].validLap}, {"LapTime", i->second[fastestLapIndex].lapTime}, {"Sector1", i->second[fastestLapIndex].sector1}, {"Sector2", i->second[fastestLapIndex].sector2}, {"Sector3", i->second[fastestLapIndex].sector3}, {"Vehicle", i->second[fastestLapIndex].vehicle}, {"Track", i->second[fastestLapIndex].track} });
+                if (fastestLapOnly) {
+                    if (lapInMinutes)
+                        laps[0] = json::object({ {"ValidLap", i->second[fastestLapIndex].validLap}, {"LapTime", formataVolta(i->second[fastestLapIndex].lapTime)}, {"Sector1", formataVolta(i->second[fastestLapIndex].sector1)}, {"Sector2", formataVolta(i->second[fastestLapIndex].sector2)}, {"Sector3", formataVolta(i->second[fastestLapIndex].sector3)}, {"Vehicle", vehicleList[i->second[fastestLapIndex].vehicle]}, {"Track", trackList[i->second[fastestLapIndex].track]} });
+                    else
+                        laps[0] = json::object({ {"ValidLap", i->second[fastestLapIndex].validLap}, {"LapTime", i->second[fastestLapIndex].lapTime}, {"Sector1", i->second[fastestLapIndex].sector1}, {"Sector2", i->second[fastestLapIndex].sector2}, {"Sector3", i->second[fastestLapIndex].sector3}, {"Vehicle", vehicleList[i->second[fastestLapIndex].vehicle]}, {"Track", trackList[i->second[fastestLapIndex].track]} });
+                }
 
                 outjson[indexNames]["Name"] = i->first;
                 outjson[indexNames]["Laps"] = laps;
