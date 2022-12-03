@@ -79,7 +79,7 @@ int main()
         //std::cout << e.value();
         std::map<int, std::string> refidMap;
         std::map<int, int64_t> refidVehicleMap;
-        std::map<int, std::list<Lap>> refidLapMap;
+        std::map<std::string, std::vector<Lap>> nameLapMap;
         cout << "Extraindo dados do JSON." << endl;
         for (auto it = hist.begin(); it != hist.end(); ++it)
         {
@@ -94,7 +94,6 @@ int main()
                 refidMap.insert_or_assign(r, name);
                 refidVehicleMap.insert_or_assign(r, vehicleid);
                 std::list<Lap> v;
-                refidLapMap.insert_or_assign(r, v);
             }
 
             json members = (*it)["members"];
@@ -139,21 +138,12 @@ int main()
                             lap.sector3 = s3;
                             lap.lapTime = n;
                             lap.track = trackid;
+                            lap.vehicle = refidVehicleMap[s];
 
-                            refidLapMap[s].push_back(lap);
+                            nameLapMap[refidMap[s]].push_back(lap);
                         }
                     }
                 }
-            }
-        }
-
-        std::map<std::string, std::vector<Lap>> nameLapMap;
-        for (auto r = refidLapMap.begin(); r != refidLapMap.end(); ++r)
-        {
-            for (auto l = r->second.begin(); l != r->second.end(); ++l)
-            {
-                l->vehicle = refidVehicleMap[r->first];
-                nameLapMap[refidMap[r->first]].push_back(*l);
             }
         }
 
@@ -183,7 +173,7 @@ int main()
             indexNames++;
         }
 
-        std::ofstream o("d:/output.json");
+        std::ofstream o("output.json");
         o << out;
         o.close();
     }
