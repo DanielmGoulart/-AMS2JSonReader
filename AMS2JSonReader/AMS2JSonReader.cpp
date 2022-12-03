@@ -65,6 +65,7 @@ int main()
         json data = json::parse(conf);
         int time = data["Delay"];
         std::string outdir = data["OutputDir"];
+        outdir += "output.json";
         bool fastestLapOnly = data["OnlyFastestLap"];
         bool lapInMinutes = data["LapInMinutes"];
 
@@ -234,7 +235,7 @@ int main()
                 indexNames++;
             }
 
-            outdir += "output.json";
+            
             std::ofstream o(outdir);
             if (!o.is_open())
                 cout << std::endl << "Ocorreu um erro ao criar o arquivo!" << std::endl;
