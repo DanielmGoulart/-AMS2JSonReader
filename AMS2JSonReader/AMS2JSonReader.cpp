@@ -50,7 +50,7 @@ std::string formataVolta(int n)
 
 int main()
 {
-    std::ifstream conf("config.json");
+    std::ifstream conf("json_reader_config.json");
     if (!conf.is_open())
     {
         cout << "Erro Fatal! Arquivo de configuração não encontrado." << endl << "Encerrando aplicação!";
@@ -149,6 +149,9 @@ int main()
 
                                 json l = (*it3)["LapTime"];
                                 int n = *l.begin();
+
+                                if (s2 == 0 && valid)
+                                    valid = 0;
 
                                 int s = *refid;
                                 Lap lap = {};
