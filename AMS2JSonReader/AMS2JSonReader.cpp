@@ -63,6 +63,7 @@ int main()
         json data = json::parse(conf);
         int time = data["Delay"];
         std::string outdir = data["OutputDir"];
+        bool fastestLapOnly = data["OnlyFastestLap"];
 
         int notFirstBatch = 0;
 
@@ -171,23 +172,27 @@ int main()
             for (auto i = nameLapMap.begin(); i != nameLapMap.end(); ++i)
             {
                 //cout << "Name: " << i->first << endl;
-
+                int fastestLapIndex = 0;
+                int totalLaps = 0;
                 json laps;
                 for (auto l = i->second.begin(); l != i->second.end(); ++l)
                 {
                     int index = static_cast<int>(l - i->second.begin());
-                    std::string valid;
-                    if (l->validLap)
-                        valid = "Valid Lap - ";
-                    else
-                        valid = "Invalid Lap - ";
 
-                    //cout << valid  << "LapTime: " << formataVolta(l->lapTime) << " Sector1 : " << formataVolta(l->sector1) << " Sector2 : " << formataVolta(l->sector2) << " Sector3 : " << formataVolta(l->sector3) << " Vehicle : " << l->vehicle << endl;
+                    if ((!i->second[fastestLapIndex].validLap && l->validLap) || (l->validLap && l->lapTime < i->second[fastestLapIndex].lapTime))
+                        fastestLapIndex = index;
 
-                    laps[index] = json::object({ {"ValidLap", l->validLap}, {"LapTime", l->lapTime}, {"Sector1", l->sector1}, {"Sector2", l->sector2}, {"Sector3", l->sector3}, {"Vehicle", l->vehicle}, {"Track", l->track} });
+                    totalLaps++;
+
+                    if(!fastestLapOnly)
+                        laps[index] = json::object({ {"ValidLap", l->validLap}, {"LapTime", l->lapTime}, {"Sector1", l->sector1}, {"Sector2", l->sector2}, {"Sector3", l->sector3}, {"Vehicle", l->vehicle}, {"Track", l->track} });
                 }
+                if(fastestLapOnly)
+                    laps[0] = json::object({ {"ValidLap", i->second[fastestLapIndex].validLap}, {"LapTime", i->second[fastestLapIndex].lapTime}, {"Sector1", i->second[fastestLapIndex].sector1}, {"Sector2", i->second[fastestLapIndex].sector2}, {"Sector3", i->second[fastestLapIndex].sector3}, {"Vehicle", i->second[fastestLapIndex].vehicle}, {"Track", i->second[fastestLapIndex].track} });
+
                 outjson[indexNames]["Name"] = i->first;
                 outjson[indexNames]["Laps"] = laps;
+                outjson[indexNames]["TotalLaps"] = totalLaps;
                 //cout << endl;
                 indexNames++;
             }

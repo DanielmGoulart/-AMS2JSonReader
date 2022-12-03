@@ -1,4 +1,5 @@
 {
     "Delay": 900,
-    "OutputDir": "D:\\testes\\"
+    "OutputDir": "D:\\testes\\",
+    "OnlyFastestLap":  true
 }
