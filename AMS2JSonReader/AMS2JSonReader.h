@@ -12,3 +12,27 @@
 
 // TODO: Reference additional headers your program requires here.
 #include "json.hpp"
+
+struct Lap
+{
+    int lapTime;
+    int sector1;
+    int sector2;
+    int sector3;
+    bool validLap;
+    int64_t vehicle;
+    int64_t track;
+};
+
+struct Player
+{
+    std::string name;
+    int64_t vehicle;
+    std::vector<Lap> laps;
+};
+
+struct Participant
+{
+    std::string name;
+    int64_t vehicle;
+};

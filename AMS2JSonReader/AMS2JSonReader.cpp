@@ -50,6 +50,162 @@ std::string formataVolta(int n)
 
 int main()
 {
+
+    std::ifstream f("jr_stats_data.json", std::ifstream::in | std::ifstream::binary);
+    if (!f.is_open())
+    {
+        cout << "Arquivo json não encontrado, é necessário colocar o arquivo jr_stats_data.json no mesmo diretório da aplicação";
+
+        return 0;
+    }
+
+    cout << "Formatando JSON" << endl;
+    string out;
+    string line;
+    while (std::getline(f, line))
+    {
+        if (line.substr(0, 2) != "//" && line.substr(0, 2) != "\r\n")
+            out += line;
+    }
+
+    f.close();
+
+    try
+    {
+        json data = json::parse(out);
+        json hist = data["stats"]["history"];
+        json players = data["stats"]["players"];
+        //auto e = hist.find("members");
+        //std::cout << e.value();
+        std::map<int, std::string> refidMap;
+        std::map<int, int64_t> refidVehicleMap;
+        std::map<int, std::list<Lap>> refidLapMap;
+        cout << "Extraindo dados do JSON." << endl;
+        for (auto it = hist.begin(); it != hist.end(); ++it)
+        {
+            int64_t trackid = (*it)["setup"]["TrackId"];
+            json participants = (*it)["participants"];
+            for (auto partit = participants.begin(); partit != participants.end(); ++partit)
+            {
+                std::string name = (*partit).find("Name").value();
+                auto ref = (*partit).find("RefId");
+                int r = ref.value();
+                int64_t vehicleid = (*partit).find("VehicleId").value();
+                refidMap.insert_or_assign(r, name);
+                refidVehicleMap.insert_or_assign(r, vehicleid);
+                std::list<Lap> v;
+                refidLapMap.insert_or_assign(r, v);
+            }
+
+            json members = (*it)["members"];
+            for (auto memberit = members.begin(); memberit != members.end(); ++memberit)
+            {
+                int chave = std::stoi(memberit.key());
+                std::string name = (*memberit).find("name").value();
+                refidMap.insert_or_assign(chave, name);
+            }
+
+            json eventos = (*it)["stages"]["practice1"]["events"];
+            for (auto it2 = eventos.begin(); it2 != eventos.end(); ++it2)
+            {
+                json s = (*it2);
+                auto n = *it2;
+
+                auto x = s.find("event_name");
+                if (x.value() == "Lap") {
+                    auto refid = s.find("refid");
+
+                    for (auto it3 = s.begin(); it3 != s.end(); ++it3)
+                    {
+                        if (it3.key() == "attributes")
+                        {
+                            json v = (*it3)["CountThisLapTimes"];
+                            int valid = *v.begin();
+
+                            int s1 = *((*it3)["Sector1Time"]).begin();
+                            int s2 = *((*it3)["Sector2Time"]).begin();
+                            int s3 = *((*it3)["Sector3Time"]).begin();
+
+                            json l = (*it3)["LapTime"];
+                            int n = *l.begin();
+                            //if(valid)
+                            //    std::cout << "Refid: " << *refid << " Nome: " << refidMap[*refid] << " Volta: " << formataVolta(n) << " " << s1 << s2 << s3 << std::endl;
+                            
+                            int s = *refid;
+                            Lap lap = {};
+                            lap.validLap = valid;
+                            lap.sector1 = s1;
+                            lap.sector2 = s2;
+                            lap.sector3 = s3;
+                            lap.lapTime = n;
+                            lap.track = trackid;
+
+                            refidLapMap[s].push_back(lap);
+                        }
+                    }
+                }
+            }
+        }
+
+        std::map<std::string, std::vector<Lap>> nameLapMap;
+        for (auto r = refidLapMap.begin(); r != refidLapMap.end(); ++r)
+        {
+            for (auto l = r->second.begin(); l != r->second.end(); ++l)
+            {
+                l->vehicle = refidVehicleMap[r->first];
+                nameLapMap[refidMap[r->first]].push_back(*l);
+            }
+        }
+
+        json out;
+        int indexNames = 0;
+        for (auto i = nameLapMap.begin(); i != nameLapMap.end(); ++i)
+        {
+            //cout << "Name: " << i->first << endl;
+
+            json laps;
+            for (auto l = i->second.begin(); l != i->second.end(); ++l)
+            {
+                int index = static_cast<int>( l - i->second.begin());
+                std::string valid;
+                if (l->validLap)
+                    valid = "Valid Lap - ";
+                else
+                    valid = "Invalid Lap - ";
+
+                //cout << valid  << "LapTime: " << formataVolta(l->lapTime) << " Sector1 : " << formataVolta(l->sector1) << " Sector2 : " << formataVolta(l->sector2) << " Sector3 : " << formataVolta(l->sector3) << " Vehicle : " << l->vehicle << endl;
+
+                laps[index] = json::object({{"ValidLap", l->validLap}, {"LapTime", l->lapTime}, {"Sector1", l->sector1}, {"Sector2", l->sector2}, {"Sector3", l->sector3}, {"Vehicle", l->vehicle}, {"Track", l->track}});
+            }
+            out[indexNames]["Name"] = i->first;
+            out[indexNames]["Laps"] = laps;
+            //cout << endl;
+            indexNames++;
+        }
+
+        std::ofstream o("d:/output.json");
+        o << out;
+        o.close();
+    }
+    catch (json::exception& e)
+    {
+        std::cout << "message: " << e.what() << '\n'
+            << "exception id: " << e.id << std::endl;
+
+        goto exit;
+    }
+    cout << std::endl << "Arquivo criado com sucesso!" << std::endl;
+
+exit:
+    std::cin.get();
+    std::cin.get();
+
+    return 0;
+}
+
+
+void GenerateCSV()
+{
     string inputString;
 
     cout << "Informe o nome do arquivo a ser criado: ";
@@ -153,5 +309,5 @@ exit:
     std::cin.get();
     std::cin.get();
 
-    return 0;
+    return;
 }
