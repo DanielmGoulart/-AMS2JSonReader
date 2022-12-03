@@ -241,7 +241,7 @@ int main()
             else
                 cout << std::endl << "Arquivo criado com sucesso!" << std::endl;
 
-            o << outjson;
+            o << outjson.dump(4);
             o.close();
 
         }
