@@ -50,16 +50,27 @@ std::string formataVolta(int n)
 
 int main()
 {
+    std::ifstream conf("config.json");
+    if (!conf.is_open())
+    {
+        cout << "Erro Fatal! Arquivo de configuração não encontrado." << endl << "Encerrando aplicação!";
+
+        return 0;
+    }
 
     try
     {
+        json data = json::parse(conf);
+        int time = data["Delay"];
+        std::string outdir = data["OutputDir"];
+
         int fistBatch = 0;
 
         while (true)
         {
             if (fistBatch) {
-                cout << "Aguardando 900 segundos para a próxima execução" << endl;
-                std::this_thread::sleep_for(std::chrono::seconds(900));
+                cout << "Aguardando " << time << " segundos para a próxima execução" << endl;
+                std::this_thread::sleep_for(std::chrono::seconds(time));
             }
 
             fistBatch = 1;
@@ -181,11 +192,15 @@ int main()
                 indexNames++;
             }
 
-            std::ofstream o("output.json");
+            outdir += "output.json";
+            std::ofstream o(outdir);
+            if (!o.is_open())
+                cout << std::endl << "Ocorreu um erro ao criar o arquivo!" << std::endl;
+            else
+                cout << std::endl << "Arquivo criado com sucesso!" << std::endl;
+
             o << outjson;
             o.close();
-
-            cout << std::endl << "Arquivo criado com sucesso!" << std::endl;
 
         }
     }
