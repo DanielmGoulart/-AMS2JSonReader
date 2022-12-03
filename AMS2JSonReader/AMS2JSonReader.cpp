@@ -64,16 +64,16 @@ int main()
         int time = data["Delay"];
         std::string outdir = data["OutputDir"];
 
-        int fistBatch = 0;
+        int notFirstBatch = 0;
 
         while (true)
         {
-            if (fistBatch) {
+            if (notFirstBatch) {
                 cout << "Aguardando " << time << " segundos para a próxima execução" << endl;
                 std::this_thread::sleep_for(std::chrono::seconds(time));
             }
 
-            fistBatch = 1;
+            notFirstBatch = 1;
 
             std::ifstream f("jr_stats_data.json", std::ifstream::in | std::ifstream::binary);
             if (!f.is_open())
