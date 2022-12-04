@@ -11,6 +11,7 @@
 #include <locale>
 #include <thread>
 #include <chrono>
+#include <algorithm>
 
 // TODO: Reference additional headers your program requires here.
 #include "json.hpp"
@@ -24,6 +25,23 @@ struct Lap
     bool validLap;
     int64_t vehicle;
     int64_t track;
+
+    bool operator < (const Lap& str) const
+    {
+        return (lapTime < str.lapTime);
+    }
+};
+
+struct FastestLap
+{
+    std::string name;
+    Lap lap;
+    int totalLaps;
+
+    bool operator < (const FastestLap& str) const
+    {
+        return (lap.lapTime < str.lap.lapTime);
+    }
 };
 
 struct Player

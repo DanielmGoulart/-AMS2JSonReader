@@ -198,13 +198,16 @@ int main()
             }
 
             json outjson;
+            json lapsjson;
             int indexNames = 0;
+            std::vector<FastestLap> fastestLapList;
             for (auto i = nameLapMap.begin(); i != nameLapMap.end(); ++i)
             {
                 //cout << "Name: " << i->first << endl;
                 int fastestLapIndex = 0;
                 int totalLaps = 0;
                 json laps;
+
                 for (auto l = i->second.begin(); l != i->second.end(); ++l)
                 {
                     int index = static_cast<int>(l - i->second.begin());
@@ -222,20 +225,39 @@ int main()
                     }
                 }
                 if (fastestLapOnly) {
-                    if (lapInMinutes)
-                        laps[0] = json::object({ {"ValidLap", i->second[fastestLapIndex].validLap}, {"LapTime", formataVolta(i->second[fastestLapIndex].lapTime)}, {"Sector1", formataVolta(i->second[fastestLapIndex].sector1)}, {"Sector2", formataVolta(i->second[fastestLapIndex].sector2)}, {"Sector3", formataVolta(i->second[fastestLapIndex].sector3)}, {"Vehicle", vehicleList[i->second[fastestLapIndex].vehicle]}, {"Track", trackList[i->second[fastestLapIndex].track]} });
-                    else
-                        laps[0] = json::object({ {"ValidLap", i->second[fastestLapIndex].validLap}, {"LapTime", i->second[fastestLapIndex].lapTime}, {"Sector1", i->second[fastestLapIndex].sector1}, {"Sector2", i->second[fastestLapIndex].sector2}, {"Sector3", i->second[fastestLapIndex].sector3}, {"Vehicle", vehicleList[i->second[fastestLapIndex].vehicle]}, {"Track", trackList[i->second[fastestLapIndex].track]} });
-                }
+                    FastestLap fl;
+                    fl.name = i->first;
+                    fl.lap = i->second[fastestLapIndex];
+                    fl.totalLaps = totalLaps;
+                    fastestLapList.push_back(fl);
+                }else {
+                    lapsjson[indexNames]["Name"] = i->first;
+                    lapsjson[indexNames]["Laps"] = laps;
+                    lapsjson[indexNames]["TotalLaps"] = totalLaps;
 
-                outjson[indexNames]["Name"] = i->first;
-                outjson[indexNames]["Laps"] = laps;
-                outjson[indexNames]["TotalLaps"] = totalLaps;
-                //cout << endl;
-                indexNames++;
+                    indexNames++;
+                }
             }
 
-            
+            if (fastestLapOnly) {
+                json fastestlapjson;
+                std::sort(fastestLapList.begin(), fastestLapList.end());
+                for (auto i = fastestLapList.begin(); i != fastestLapList.end(); ++i)
+                {
+                    int index = static_cast<int>(i - fastestLapList.begin());
+                    fastestlapjson[index]["Name"] = i->name;
+                    fastestlapjson[index]["TotalLaps"] = i->totalLaps;
+                    if (lapInMinutes)
+                        fastestlapjson[index]["Lap"] = json::object({ {"ValidLap", i->lap.validLap}, {"LapTime", formataVolta(i->lap.lapTime)}, {"Sector1", formataVolta(i->lap.sector1)}, {"Sector2", formataVolta(i->lap.sector2)}, {"Sector3", formataVolta(i->lap.sector3)}, {"Vehicle", vehicleList[i->lap.vehicle]}, {"Track", trackList[i->lap.track]} });
+                    else
+                        fastestlapjson[index]["Lap"] = json::object({ {"ValidLap", i->lap.validLap}, {"LapTime", i->lap.lapTime}, {"Sector1", i->lap.sector1}, {"Sector2", i->lap.sector2}, {"Sector3", i->lap.sector3}, {"Vehicle", vehicleList[i->lap.vehicle]}, {"Track", trackList[i->lap.track]} });
+                }
+
+                outjson["stats"] = fastestlapjson;
+            }
+            else
+                outjson["stats"] = lapsjson;
+
             std::ofstream o(outdir);
             if (!o.is_open())
                 cout << std::endl << "Ocorreu um erro ao criar o arquivo!" << std::endl;
