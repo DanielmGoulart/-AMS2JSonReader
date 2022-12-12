@@ -4,7 +4,7 @@
 #include "AMS2JSonReader.h"
 
 using namespace std;
-using json = nlohmann::json;
+using json = nlohmann::ordered_json;
 
 std::string formataVolta(int n)
 {
@@ -76,6 +76,7 @@ int main()
         json vehiclelistjson = vehiclesjson["response"]["list"];
 
         std::map<int64_t, std::string> vehicleList;
+        std::map<int64_t, std::string> vehicleClassList;
         std::map<int64_t, std::string> trackList;
 
         for (auto trackit = tracklistjson.begin(); trackit != tracklistjson.end(); ++trackit)
@@ -89,6 +90,8 @@ int main()
             int64_t id = (*vehicleit)["id"];
             std::string name = (*vehicleit)["name"];
             vehicleList.insert_or_assign(id, name);
+            std::string vehicleClass = (*vehicleit)["class"];
+            vehicleClassList.insert_or_assign(id, vehicleClass);
         }
 
 
@@ -200,10 +203,11 @@ int main()
             json outjson;
             json lapsjson;
             int indexNames = 0;
-            std::vector<FastestLap> fastestLapList;
+            std::map <std::string, std::vector<FastestLap>> fastestLapListPerClass;
             for (auto i = nameLapMap.begin(); i != nameLapMap.end(); ++i)
             {
                 //cout << "Name: " << i->first << endl;
+                std::map<std::string, int> classFastestLapIndexMap;
                 int fastestLapIndex = 0;
                 int totalLaps = 0;
                 json laps;
@@ -211,9 +215,17 @@ int main()
                 for (auto l = i->second.begin(); l != i->second.end(); ++l)
                 {
                     int index = static_cast<int>(l - i->second.begin());
+                    std::string classLap = vehicleClassList[l->vehicle];
+                    std::string classFastestLap = vehicleClassList[i->second[classFastestLapIndexMap[classLap]].vehicle];
 
-                    if ((!i->second[fastestLapIndex].validLap && l->validLap) || (l->validLap && l->lapTime < i->second[fastestLapIndex].lapTime))
+                    //Esta condicional consiste em 3 partes:
+                    // 1 - Verificar se a volta mais rápida é da mesma classe que a volta atual, se não for vai substituir
+                    // 2 - Se a volta mais rápida não for válida irá substituir
+                    // 3 - Se a volta atual for menor que a volta mais rápida irá substituir
+                    if (((classLap != classFastestLap) || (!i->second[classFastestLapIndexMap[vehicleClassList[l->vehicle]]].validLap && l->validLap)) || (l->validLap && l->lapTime < i->second[classFastestLapIndexMap[vehicleClassList[l->vehicle]]].lapTime)) {
+                        classFastestLapIndexMap[vehicleClassList[l->vehicle]] = index;
                         fastestLapIndex = index;
+                    }
 
                     totalLaps++;
                     
@@ -224,39 +236,63 @@ int main()
                             laps[index] = json::object({ {"ValidLap", l->validLap}, {"LapTime", l->lapTime}, {"Sector1", l->sector1}, {"Sector2", l->sector2}, {"Sector3", l->sector3}, {"Vehicle", vehicleList[l->vehicle]}, {"Track", trackList[l->track]} });
                     }
                 }
-                if (fastestLapOnly) {
-                    FastestLap fl;
+
+                for (auto f = classFastestLapIndexMap.begin(); f != classFastestLapIndexMap.end(); ++f)
+                {
+                    cout << "Nome: " << i->first << endl;
+                    cout << "Categoria: " << f->first << endl;
+                    FastestLap fl = {};
                     fl.name = i->first;
-                    fl.lap = i->second[fastestLapIndex];
+                    fl.lap = i->second[f->second];
                     fl.totalLaps = totalLaps;
-                    fastestLapList.push_back(fl);
-                }else {
+                    if (!fastestLapOnly)
+                        fl.allLapsIndex = indexNames;
+                    if(fl.lap.validLap)
+                        fastestLapListPerClass[f->first].push_back(fl);
+                }
+
+
+                if (!fastestLapOnly) {
                     lapsjson[indexNames]["Name"] = i->first;
                     lapsjson[indexNames]["Laps"] = laps;
-                    lapsjson[indexNames]["TotalLaps"] = totalLaps;
 
                     indexNames++;
                 }
             }
 
-            if (fastestLapOnly) {
+            json fastestlapperclassjson;
+            int indexClass = 0;
+            for (auto fastestLapList = fastestLapListPerClass.begin(); fastestLapList != fastestLapListPerClass.end(); ++fastestLapList)
+            {
                 json fastestlapjson;
-                std::sort(fastestLapList.begin(), fastestLapList.end());
-                for (auto i = fastestLapList.begin(); i != fastestLapList.end(); ++i)
+                std::sort(fastestLapList->second.begin(), fastestLapList->second.end());
+                for (auto i = fastestLapList->second.begin(); i != fastestLapList->second.end(); ++i)
                 {
-                    int index = static_cast<int>(i - fastestLapList.begin());
+                    int index = static_cast<int>(i - fastestLapList->second.begin());
                     fastestlapjson[index]["Name"] = i->name;
                     fastestlapjson[index]["TotalLaps"] = i->totalLaps;
+
+                    if (!fastestLapOnly)
+                        fastestlapjson[index]["Index"] = i->allLapsIndex;
+
                     if (lapInMinutes)
                         fastestlapjson[index]["Lap"] = json::object({ {"ValidLap", i->lap.validLap}, {"LapTime", formataVolta(i->lap.lapTime)}, {"Sector1", formataVolta(i->lap.sector1)}, {"Sector2", formataVolta(i->lap.sector2)}, {"Sector3", formataVolta(i->lap.sector3)}, {"Vehicle", vehicleList[i->lap.vehicle]}, {"Track", trackList[i->lap.track]} });
                     else
                         fastestlapjson[index]["Lap"] = json::object({ {"ValidLap", i->lap.validLap}, {"LapTime", i->lap.lapTime}, {"Sector1", i->lap.sector1}, {"Sector2", i->lap.sector2}, {"Sector3", i->lap.sector3}, {"Vehicle", vehicleList[i->lap.vehicle]}, {"Track", trackList[i->lap.track]} });
                 }
 
-                outjson["stats"] = fastestlapjson;
+                //cout << "Categoria Loop 2: " << fastestLapList->first << endl;
+                fastestlapperclassjson[indexClass]["Category"] = fastestLapList->first;
+                fastestlapperclassjson[indexClass]["LapsPerCategory"] = fastestlapjson;
+                indexClass++;
             }
-            else
-                outjson["stats"] = lapsjson;
+            
+            
+
+            outjson["stats"] = fastestlapperclassjson;
+            
+            if (!fastestLapOnly)
+                outjson["overall"] = lapsjson;
 
             std::ofstream o(outdir);
             if (!o.is_open())

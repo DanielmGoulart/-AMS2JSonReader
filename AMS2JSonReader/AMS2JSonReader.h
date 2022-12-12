@@ -37,24 +37,12 @@ struct FastestLap
     std::string name;
     Lap lap;
     int totalLaps;
+    int allLapsIndex;
 
     bool operator < (const FastestLap& str) const
     {
         return (lap.lapTime < str.lap.lapTime);
     }
-};
-
-struct Player
-{
-    std::string name;
-    int64_t vehicle;
-    std::vector<Lap> laps;
-};
-
-struct Participant
-{
-    std::string name;
-    int64_t vehicle;
 };
 
 char vehicles[] = R"({
