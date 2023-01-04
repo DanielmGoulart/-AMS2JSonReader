@@ -48,6 +48,30 @@ std::string formataVolta(int n)
     return s;
 }
 
+std::string formataSegundos(int n)
+{
+    int v = n;
+    std::string s;
+    if (n > 1000)
+    {
+        int mili = v % 1000;
+        v -= mili;
+
+        s += std::to_string(v);
+        s += ".";
+    }
+    else
+        s = "0.";
+
+    if (v < 100)
+        s += "0";
+    if (v < 10)
+        s += "0";
+
+    s += std::to_string(v);
+
+    return s;
+}
 
 
 int main()
@@ -153,7 +177,10 @@ int main()
                 {
                     int chave = std::stoi(memberit.key());
                     std::string name = (*memberit).find("name").value();
+
                     refidMap.insert_or_assign(chave, name);
+                    int64_t vehicleid = (*memberit)["setup"]["VehicleId"];
+                    refidVehicleMap.insert_or_assign(chave, vehicleid);
                 }
 
                 json eventos = (*it)["stages"]["practice1"]["events"];
@@ -183,7 +210,7 @@ int main()
                                 if (s2 == 0 && valid)
                                     valid = 0;
 
-                                int s = *refid;
+                                int valorrefid = (int)*refid;
                                 Lap lap = {};
                                 lap.validLap = valid;
                                 lap.sector1 = s1;
@@ -191,9 +218,9 @@ int main()
                                 lap.sector3 = s3;
                                 lap.lapTime = n;
                                 lap.track = trackid;
-                                lap.vehicle = refidVehicleMap[s];
+                                lap.vehicle = refidVehicleMap[valorrefid];
 
-                                nameLapMap[refidMap[s]].push_back(lap);
+                                nameLapMap[refidMap[valorrefid]].push_back(lap);
                             }
                         }
                     }
