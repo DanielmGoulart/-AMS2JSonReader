@@ -850,6 +850,11 @@ char vehicles[] = R"({
           "id" : 943684424,
           "name" : "Swift 009c Ford-Cosworth",
           "class" : "F-USA_Gen2"
+        },
+        {
+          "id" : -67190685,
+          "name" : "Formula Inter MG-15",
+          "class" : "F-Inter"
         }
       ]
     }
@@ -1658,6 +1663,16 @@ char tracks[] = R"({
       {
         "id" : -619438500,
         "name" : "Watkins_Glen_SIL",
+        "gridsize" : 32
+      },
+      {
+        "id" : 788137081,
+        "name" : "Circuit_de_Catalunya_GP",
+        "gridsize" : 32
+      },
+      {
+        "id" : -2045930240,
+        "name" : "Circuit_de_Catalunya_GP_NC",
         "gridsize" : 32
       }
     ]

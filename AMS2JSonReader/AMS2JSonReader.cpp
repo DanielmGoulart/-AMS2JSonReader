@@ -169,7 +169,6 @@ int main()
                     int64_t vehicleid = (*partit).find("VehicleId").value();
                     refidMap.insert_or_assign(r, name);
                     refidVehicleMap.insert_or_assign(r, vehicleid);
-                    std::list<Lap> v;
                 }
 
                 json members = (*it)["members"];
@@ -303,7 +302,7 @@ int main()
                         fastestlapjson[index]["Index"] = i->allLapsIndex;
 
                     if (lapInMinutes)
-                        fastestlapjson[index]["Lap"] = json::object({ {"ValidLap", i->lap.validLap}, {"LapTime", formataVolta(i->lap.lapTime)}, {"Sector1", formataVolta(i->lap.sector1)}, {"Sector2", formataVolta(i->lap.sector2)}, {"Sector3", formataVolta(i->lap.sector3)}, {"Vehicle", vehicleList[i->lap.vehicle]}, {"Track", trackList[i->lap.track]} });
+                        fastestlapjson[index]["Lap"] = json::object({ {"ValidLap", i->lap.validLap}, {"LapTime", formataVolta(i->lap.lapTime)}, {"Sector1", formataVolta(i->lap.sector1)}, {"Sector2", formataVolta(i->lap.sector2)}, {"Sector3", formataVolta(i->lap.sector3)}, {"Vehicle", vehicleList[i->lap.vehicle]}, {"Track", trackList[i->lap.track]}, {"RawTime", i->lap.lapTime} });
                     else
                         fastestlapjson[index]["Lap"] = json::object({ {"ValidLap", i->lap.validLap}, {"LapTime", i->lap.lapTime}, {"Sector1", i->lap.sector1}, {"Sector2", i->lap.sector2}, {"Sector3", i->lap.sector3}, {"Vehicle", vehicleList[i->lap.vehicle]}, {"Track", trackList[i->lap.track]} });
                 }
