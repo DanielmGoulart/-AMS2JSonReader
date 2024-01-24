@@ -855,6 +855,61 @@ char vehicles[] = R"({
           "id" : -67190685,
           "name" : "Formula Inter MG-15",
           "class" : "F-Inter"
+        },
+        {
+          "id" : -1416203489,
+          "name" : "Nissan GT-R Nismo GT3",
+          "class" : "GT3"
+        },
+        {
+          "id" : -343023508,
+          "name" : "Nissan R390 GT1",
+          "class" : "GT1"
+        },
+        {
+            "id" : 1989434463,
+            "name" : "Ginetta G58 Gen2",
+            "class" : "P1Gen2"
+        },
+        {
+            "id" : -1164814162,
+            "name" : "MetalMoro AJR Gen2 Chevrolet",
+            "class" : "P1Gen2"
+        },
+        {
+            "id" : 995681332,
+            "name" : "MetalMoro AJR Gen2 Honda",
+            "class" : "P1Gen2"
+        },
+        {
+            "id" : -68656752,
+            "name" : "MetalMoro AJR Gen2 Nissan",
+            "class" : "P1Gen2"
+        },
+        {
+            "id" : -1720554236,
+            "name" : "Sigma P1 G5",
+            "class" : "P1Gen2"
+        },
+        {
+            "id" : 1311912387,
+            "name" : "BMW M4 GT3",
+            "class" : "GT3_Gen2"
+        },
+        {
+            "id" : 160008140,
+            "name" : "Mercedes-AMG GT3 Evo",
+            "class" : "GT3_Gen2"
+        },
+        {
+            "id" : -519566358,
+            "name" : "Porsche 992 GT3 R",
+            "class" : "GT3_Gen2"
+        },
+        {
+            "id" : -1026941607,
+            "name" : "McLaren 720S GT3 Evo",
+            "class" : "GT3_Gen2"
         }
       ]
     }
@@ -1673,6 +1728,26 @@ char tracks[] = R"({
       {
         "id" : -2045930240,
         "name" : "Circuit_de_Catalunya_GP_NC",
+        "gridsize" : 32
+      },
+      {
+        "id" : -869897529,
+        "name" : "Cascais_1988",
+        "gridsize" : 30
+      },
+      {
+        "id" : -1548942089,
+        "name" : "Jerez_GP1988",
+        "gridsize" : 32
+      },
+      {
+        "id" : 1060182346,
+        "name" : "Le_Mans_24h",
+        "gridsize" : 60
+      },
+      {
+        "id" : 1446740417,
+        "name" : "Le_Mans_Circuit_Bugatti",
         "gridsize" : 32
       }
     ]
