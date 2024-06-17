@@ -12,6 +12,7 @@
 #include <thread>
 #include <chrono>
 #include <algorithm>
+#include <curl/curl.h>
 
 // TODO: Reference additional headers your program requires here.
 #include "json.hpp"
@@ -910,6 +911,21 @@ char vehicles[] = R"({
             "id" : -1026941607,
             "name" : "McLaren 720S GT3 Evo",
             "class" : "GT3_Gen2"
+        },
+        {
+            "id" : -842343170,
+            "name" : "BMW M Hybrid V8",
+            "class" : "LMDh"
+        },
+        {
+            "id" : -811404968,
+            "name" : "Porsche 963",
+            "class" : "LMDh"
+        },
+        {
+            "id" : 16119375,
+            "name" : "Cadillac V-Series.R",
+            "class" : "LMDh"
         }
       ]
     }

@@ -1,0 +1,40 @@
+Package: curl
+Version: 8.8.0
+Depends: vcpkg-cmake, vcpkg-cmake-config, zlib
+Architecture: x64-windows
+Multi-Arch: same
+Abi: ddd4faff3a9e1ac3fbe66d6e3ffdfe75b42f776205f8150f67212a36537916f3
+Description: A library for transferring data with URLs
+Default-Features: non-http, ssl
+
+Package: curl
+Feature: non-http
+Architecture: x64-windows
+Multi-Arch: same
+Description: Enables protocols beyond HTTP/HTTPS/HTTP2
+
+Package: curl
+Feature: schannel
+Depends: curl
+Architecture: x64-windows
+Multi-Arch: same
+Description: SSL support (Secure Channel)
+
+Package: curl
+Feature: ssl
+Depends: curl
+Architecture: x64-windows
+Multi-Arch: same
+Description: Default SSL backend
+
+Package: curl
+Feature: sspi
+Architecture: x64-windows
+Multi-Arch: same
+Description: SSPI support
+
+Package: curl
+Feature: tool
+Architecture: x64-windows
+Multi-Arch: same
+Description: Builds curl executable

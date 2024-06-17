@@ -3,6 +3,9 @@
 #
 cmake_minimum_required (VERSION 3.8)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/curl_x64-windows/include)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/curl_x64-windows/lib)
+
 # Add source to this project's executable.
 add_executable (AMS2JSonReader "AMS2JSonReader.cpp" "AMS2JSonReader.h")
 file(COPY ${CMAKE_CURRENT_LIST_DIR}/jr_stats_data.json DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
@@ -10,3 +13,7 @@ file(COPY ${CMAKE_CURRENT_LIST_DIR}/json_reader_config.json DESTINATION ${CMAKE_
 
 # TODO: Add tests and install targets if needed.
 add_definitions(-DUNICODE -D_UNICODE)
+
+target_include_directories(AMS2JSonReader PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/curl_x64-windows/include")
+# find_package(CURL REQUIRED)
+target_link_libraries(AMS2JSonReader libcurl)
