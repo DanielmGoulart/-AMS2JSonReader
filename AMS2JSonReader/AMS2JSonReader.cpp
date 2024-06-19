@@ -3,8 +3,11 @@
 
 #include "AMS2JSonReader.h"
 
+void UploadFile();
+
 using namespace std;
 using json = nlohmann::ordered_json;
+std::string outdir;
 
 std::string formataVolta(int n)
 {
@@ -80,7 +83,7 @@ int main()
     if (!conf.is_open())
     {
         cout << "Erro Fatal! Arquivo de configuração não encontrado." << endl << "Encerrando aplicação!";
-
+        
         return 0;
     }
 
@@ -88,7 +91,7 @@ int main()
     {
         json data = json::parse(conf);
         int time = data["Delay"];
-        std::string outdir = data["OutputDir"];
+        outdir = data["OutputDir"];
         outdir += "output.json";
         bool fastestLapOnly = data["OnlyFastestLap"];
         bool lapInMinutes = data["LapInMinutes"];
@@ -124,6 +127,9 @@ int main()
         while (true)
         {
             if (notFirstBatch) {
+                cout << "Gerando URL para upload" << endl;
+                UploadFile();
+
                 cout << "Aguardando " << time << " segundos para a próxima execução" << endl;
                 std::this_thread::sleep_for(std::chrono::seconds(time));
             }
@@ -346,9 +352,135 @@ exit:
     return 0;
 }
 
+static size_t WriteCallback(char* contents, size_t size, size_t nmemb, void* userp)
+{
+    ((std::string*)userp)->append((char*)contents, size * nmemb);
+    return size * nmemb;
+}
+
+static size_t ReadCallback(char* ptr, size_t size, size_t nmemb, void* userdata)
+{
+    FILE* readhere = (FILE*)userdata;
+    curl_off_t nread;
+
+    /* copy as much data as possible into the 'ptr' buffer, but no more than
+       'size' * 'nmemb' bytes! */
+    size_t retcode = fread(ptr, size, nmemb, readhere);
+
+    nread = (curl_off_t)retcode;
+
+    fprintf(stderr, "*** We read %" CURL_FORMAT_CURL_OFF_T
+        " bytes from file\n", nread);
+    return retcode;
+}
+
 void UploadFile()
 {
+    std::string key = "Authorization: IST.eyJraWQiOiJQb3pIX2FDMiIsImFsZyI6IlJTMjU2In0.eyJkYXRhIjoie1wiaWRcIjpcIjliYjUzMTNjLWNjYjMtNDUyZC04NTUyLWRkODIxY2NkODUyYlwiLFwiaWRlbnRpdHlcIjp7XCJ0eXBlXCI6XCJhcHBsaWNhdGlvblwiLFwiaWRcIjpcImNhZDM0NjA0LWEzODItNGI3Yi1hZjFlLTEzMzQzMjIzZjliZFwifSxcInRlbmFudFwiOntcInR5cGVcIjpcImFjY291bnRcIixcImlkXCI6XCJlNDc4ZWU2Zi0wYzdiLTRhMGUtYjI1ZS0xNTBjNGI1OGFiNDFcIn19IiwiaWF0IjoxNzE4MjA5NzE0fQ.MT3dHfgOdTWNtIblsHXDBcMqX8_ymW1YBYxF2DkpjieZei_IM_28MndbsmHaaBTRPcfEotzwGNMfDq49YJGO3uXCgNhRfqOgGdICM6XFlW5tPZTZ_KpGZOvcDcQ-L-9Xxn8gIt6b87qI2lrJI5YgWeHFWZxk9H8NVFpDe4aCqQOyOZyX1lgThz6brB7ejchYYklUux5YAnTOrW3T8sxVFv4PkKWwpu8ujEJmhKxpkMlvHhLX1rzdb8BH-s1gY8czPNuRNNZjo1i8_-KZ_zLUzz579INV8hm14b4YcMKANly-3OZf7ybz9NggFhlw4oJvxM7s8eDHSa8PJQLXyiBGeg";
+    std::string accountId = "wix-account-id: e478ee6f-0c7b-4a0e-b25e-150c4b58ab41";
+    std::string siteId = "wix-site-id: 432dcf22-e979-48b6-bf7c-d34895247dc1";
+    std::string readBuffer;
+
     CURL* curl = curl_easy_init();
+    struct curl_slist* headers = NULL;
+    FILE* file = NULL;
 
+    std::string requestParams = R"({
+    "mimeType": "application/json",
+    "fileName": "output.json",
+    "parentFolderId": "a9f80889994a46c799330eccd0bc3166",
+    "private": false
+})";
 
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    headers = curl_slist_append(headers, key.c_str());
+    headers = curl_slist_append(headers, accountId.c_str());
+    headers = curl_slist_append(headers, siteId.c_str());
+
+    curl_easy_setopt(curl, CURLOPT_URL, "https://www.wixapis.com/site-media/v1/files/generate-upload-url");
+    curl_easy_setopt(curl, CURLOPT_POST, 1L);
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, requestParams.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+
+    auto res = curl_easy_perform(curl);
+    if (res != CURLE_OK)
+        std::cout << "Ocorreu um erro ao tentar gerar a URL de upload" << std::endl;
+
+    long httpResponseCode = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpResponseCode);
+
+    std::cout << "HTTP status code: " << httpResponseCode << std::endl;
+
+    //std::cout << "Response: " << readBuffer << endl;
+
+    //Limpa os headers da requisição anterior
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+
+    if (httpResponseCode == 200)
+    {
+        std::cout << "Iniciando Upload do arquivo " << std::endl;
+        json response = json::parse(readBuffer);
+        struct stat file_info;
+        file = fopen(outdir.c_str(), "rb");
+        if (!file)
+        {
+            std::cout << "Falha ao abrir arquivo" << std::endl;
+            goto cleanupCurl;
+        }
+
+        if (fstat(_fileno(file), &file_info) != 0)
+        {
+            std::cout << "Falha ao ver o tamanho do arquivo" << std::endl;
+            goto cleanupCurl;
+        }
+
+        headers = NULL;
+        curl = NULL;
+        curl = curl_easy_init();
+
+        headers = curl_slist_append(headers, "Content-Type: application/octet-stream");
+
+        std::string uploadParams = R"({filename: output.json})";
+        std::string uploadBuffer;
+        std::string url = response["uploadUrl"];
+        url += "?filename=output.json";
+        //std::cout << "URL: " << url << std::endl;
+        std::cout << "File Size: " << file_info.st_size << std::endl;
+
+        curl_easy_setopt(curl, CURLOPT_READFUNCTION, ReadCallback);
+        curl_easy_setopt(curl, CURLOPT_READDATA, file);
+        curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &uploadBuffer);
+        
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+
+        res = curl_easy_perform(curl);
+
+        if (res != CURLE_OK)
+            std::cout << "Ocorreu um erro ao tentar fazer o upload do arquivo" << std::endl;
+
+        long httpResponseCode = 0;
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpResponseCode);
+
+        std::cout << "HTTP status code: " << httpResponseCode << std::endl;
+
+        std::cout << "Response: " << uploadBuffer << endl;
+
+    }
+
+cleanupCurl:
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+    if (file)
+        fclose(file);
 }
+
