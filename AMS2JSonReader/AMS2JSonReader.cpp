@@ -9,9 +9,9 @@ void UploadFile();
 using namespace std;
 using json = nlohmann::ordered_json;
 std::string outdir;
-const std::string key = "Authorization: IST.eyJraWQiOiJQb3pIX2FDMiIsImFsZyI6IlJTMjU2In0.eyJkYXRhIjoie1wiaWRcIjpcIjliYjUzMTNjLWNjYjMtNDUyZC04NTUyLWRkODIxY2NkODUyYlwiLFwiaWRlbnRpdHlcIjp7XCJ0eXBlXCI6XCJhcHBsaWNhdGlvblwiLFwiaWRcIjpcImNhZDM0NjA0LWEzODItNGI3Yi1hZjFlLTEzMzQzMjIzZjliZFwifSxcInRlbmFudFwiOntcInR5cGVcIjpcImFjY291bnRcIixcImlkXCI6XCJlNDc4ZWU2Zi0wYzdiLTRhMGUtYjI1ZS0xNTBjNGI1OGFiNDFcIn19IiwiaWF0IjoxNzE4MjA5NzE0fQ.MT3dHfgOdTWNtIblsHXDBcMqX8_ymW1YBYxF2DkpjieZei_IM_28MndbsmHaaBTRPcfEotzwGNMfDq49YJGO3uXCgNhRfqOgGdICM6XFlW5tPZTZ_KpGZOvcDcQ-L-9Xxn8gIt6b87qI2lrJI5YgWeHFWZxk9H8NVFpDe4aCqQOyOZyX1lgThz6brB7ejchYYklUux5YAnTOrW3T8sxVFv4PkKWwpu8ujEJmhKxpkMlvHhLX1rzdb8BH-s1gY8czPNuRNNZjo1i8_-KZ_zLUzz579INV8hm14b4YcMKANly-3OZf7ybz9NggFhlw4oJvxM7s8eDHSa8PJQLXyiBGeg";
-const std::string accountId = "wix-account-id: e478ee6f-0c7b-4a0e-b25e-150c4b58ab41";
-const std::string siteId = "wix-site-id: 432dcf22-e979-48b6-bf7c-d34895247dc1";
+const std::string key = "Authorization: wix API key";
+const std::string accountId = "wix-account-id: wix account ID";
+const std::string siteId = "wix-site-id: wix site ID";
 
 std::string formataVolta(int n)
 {
