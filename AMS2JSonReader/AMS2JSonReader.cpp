@@ -3,11 +3,15 @@
 
 #include "AMS2JSonReader.h"
 
+bool DeleteUploadedFile();
 void UploadFile();
 
 using namespace std;
 using json = nlohmann::ordered_json;
 std::string outdir;
+const std::string key = "Authorization: IST.eyJraWQiOiJQb3pIX2FDMiIsImFsZyI6IlJTMjU2In0.eyJkYXRhIjoie1wiaWRcIjpcIjliYjUzMTNjLWNjYjMtNDUyZC04NTUyLWRkODIxY2NkODUyYlwiLFwiaWRlbnRpdHlcIjp7XCJ0eXBlXCI6XCJhcHBsaWNhdGlvblwiLFwiaWRcIjpcImNhZDM0NjA0LWEzODItNGI3Yi1hZjFlLTEzMzQzMjIzZjliZFwifSxcInRlbmFudFwiOntcInR5cGVcIjpcImFjY291bnRcIixcImlkXCI6XCJlNDc4ZWU2Zi0wYzdiLTRhMGUtYjI1ZS0xNTBjNGI1OGFiNDFcIn19IiwiaWF0IjoxNzE4MjA5NzE0fQ.MT3dHfgOdTWNtIblsHXDBcMqX8_ymW1YBYxF2DkpjieZei_IM_28MndbsmHaaBTRPcfEotzwGNMfDq49YJGO3uXCgNhRfqOgGdICM6XFlW5tPZTZ_KpGZOvcDcQ-L-9Xxn8gIt6b87qI2lrJI5YgWeHFWZxk9H8NVFpDe4aCqQOyOZyX1lgThz6brB7ejchYYklUux5YAnTOrW3T8sxVFv4PkKWwpu8ujEJmhKxpkMlvHhLX1rzdb8BH-s1gY8czPNuRNNZjo1i8_-KZ_zLUzz579INV8hm14b4YcMKANly-3OZf7ybz9NggFhlw4oJvxM7s8eDHSa8PJQLXyiBGeg";
+const std::string accountId = "wix-account-id: e478ee6f-0c7b-4a0e-b25e-150c4b58ab41";
+const std::string siteId = "wix-site-id: 432dcf22-e979-48b6-bf7c-d34895247dc1";
 
 std::string formataVolta(int n)
 {
@@ -127,8 +131,10 @@ int main()
         while (true)
         {
             if (notFirstBatch) {
-                cout << "Gerando URL para upload" << endl;
-                UploadFile();
+                cout << "Iniciando rotina de upload do arquivo" << endl;
+
+                if(DeleteUploadedFile())
+                    UploadFile();
 
                 cout << "Aguardando " << time << " segundos para a próxima execução" << endl;
                 std::this_thread::sleep_for(std::chrono::seconds(time));
@@ -192,7 +198,6 @@ int main()
                 for (auto it2 = eventos.begin(); it2 != eventos.end(); ++it2)
                 {
                     json s = (*it2);
-                    auto n = *it2;
 
                     auto x = s.find("event_name");
                     if (x.value() == "Lap") {
@@ -374,11 +379,103 @@ static size_t ReadCallback(char* ptr, size_t size, size_t nmemb, void* userdata)
     return retcode;
 }
 
+bool DeleteUploadedFile()
+{
+    std::cout << "Iniciando rotina para deletar arquivo existente " << std::endl;
+    CURL* curl = curl_easy_init();
+    struct curl_slist* headers = NULL;
+    std::string readBuffer;
+
+    headers = curl_slist_append(headers, key.c_str());
+    headers = curl_slist_append(headers, accountId.c_str());
+    headers = curl_slist_append(headers, siteId.c_str());
+
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+    curl_easy_setopt(curl, CURLOPT_URL, "https://www.wixapis.com/site-media/v1/files?parentFolderId=a9f80889994a46c799330eccd0bc3166");
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+
+    auto res = curl_easy_perform(curl);
+    if (res != CURLE_OK)
+        std::cout << "Ocorreu um erro ao tentar consultar os arquivos" << std::endl;
+
+    //std::cout << "Response: " << readBuffer << endl;
+
+    long httpResponseCode = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpResponseCode);
+
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+
+    if (httpResponseCode == 200)
+    {
+        json response = json::parse(readBuffer);
+        json fileIds;
+
+        if (response["files"].empty()) 
+        {
+            std::cout << "Nao ha arquivo para apagar, continuando a rotina de upload " << std::endl;
+            return true;
+        }
+
+        for (auto it = response["files"].begin(); it != response["files"].end(); ++it)
+        {
+            int index = static_cast<int>(it - response["files"].begin());
+            std::cout << "Index: " << index << " " << (*it)["displayName"] << " - " << (*it)["id"] << std::endl;
+
+            fileIds[index] = (*it)["id"];
+        }
+        json params;
+        params["fileIds"] = fileIds;
+        params["permanent"] = true;
+
+        //std::cout << params.dump() << std::endl;
+        curl = NULL;
+        headers = NULL;
+        CURL* curl = curl_easy_init();
+
+        std::string paramsStr = params.dump();
+        std::cout << paramsStr << std::endl;
+
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        headers = curl_slist_append(headers, key.c_str());
+        headers = curl_slist_append(headers, accountId.c_str());
+        headers = curl_slist_append(headers, siteId.c_str());
+
+        curl_easy_setopt(curl, CURLOPT_URL, "https://www.wixapis.com/site-media/v1/bulk/files/delete");
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, paramsStr.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+        //curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+
+        auto res = curl_easy_perform(curl);
+
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpResponseCode);
+        
+        
+        std::cout << "HTTP status code: " << httpResponseCode << std::endl;
+
+        if (httpResponseCode == 200)
+        {
+            std::cout << "Arquivo deletado com sucesso! " << std::endl;
+            return true;
+        }
+
+        std::cout << "Request status: " << readBuffer << std::endl;
+    }
+
+    curl_easy_cleanup(curl);
+    curl_slist_free_all(headers);
+
+    return false;
+}
+
 void UploadFile()
 {
-    std::string key = "Authorization: IST.eyJraWQiOiJQb3pIX2FDMiIsImFsZyI6IlJTMjU2In0.eyJkYXRhIjoie1wiaWRcIjpcIjliYjUzMTNjLWNjYjMtNDUyZC04NTUyLWRkODIxY2NkODUyYlwiLFwiaWRlbnRpdHlcIjp7XCJ0eXBlXCI6XCJhcHBsaWNhdGlvblwiLFwiaWRcIjpcImNhZDM0NjA0LWEzODItNGI3Yi1hZjFlLTEzMzQzMjIzZjliZFwifSxcInRlbmFudFwiOntcInR5cGVcIjpcImFjY291bnRcIixcImlkXCI6XCJlNDc4ZWU2Zi0wYzdiLTRhMGUtYjI1ZS0xNTBjNGI1OGFiNDFcIn19IiwiaWF0IjoxNzE4MjA5NzE0fQ.MT3dHfgOdTWNtIblsHXDBcMqX8_ymW1YBYxF2DkpjieZei_IM_28MndbsmHaaBTRPcfEotzwGNMfDq49YJGO3uXCgNhRfqOgGdICM6XFlW5tPZTZ_KpGZOvcDcQ-L-9Xxn8gIt6b87qI2lrJI5YgWeHFWZxk9H8NVFpDe4aCqQOyOZyX1lgThz6brB7ejchYYklUux5YAnTOrW3T8sxVFv4PkKWwpu8ujEJmhKxpkMlvHhLX1rzdb8BH-s1gY8czPNuRNNZjo1i8_-KZ_zLUzz579INV8hm14b4YcMKANly-3OZf7ybz9NggFhlw4oJvxM7s8eDHSa8PJQLXyiBGeg";
-    std::string accountId = "wix-account-id: e478ee6f-0c7b-4a0e-b25e-150c4b58ab41";
-    std::string siteId = "wix-site-id: 432dcf22-e979-48b6-bf7c-d34895247dc1";
+    std::cout << "Iniciando rotina de upload" << std::endl;
     std::string readBuffer;
 
     CURL* curl = curl_easy_init();
@@ -461,7 +558,7 @@ void UploadFile()
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &uploadBuffer);
         
-        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+        //curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
         res = curl_easy_perform(curl);
 
@@ -473,7 +570,9 @@ void UploadFile()
 
         std::cout << "HTTP status code: " << httpResponseCode << std::endl;
 
-        std::cout << "Response: " << uploadBuffer << endl;
+        //std::cout << "Response: " << uploadBuffer << endl;
+        if(httpResponseCode == 200)
+            std::cout << "Upload de arquivo realizado com sucesso!" << std::endl;
 
     }
 
