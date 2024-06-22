@@ -100,8 +100,30 @@ int main()
         bool fastestLapOnly = data["OnlyFastestLap"];
         bool lapInMinutes = data["LapInMinutes"];
 
-        json vehiclesjson = json::parse(std::string(vehicles));
-        json tracksjson = json::parse(std::string(tracks));
+        json vehiclesjson;
+        json tracksjson;
+
+        std::string strVehicles;
+        if (GetVehiclesFromServer(strVehicles))
+        {
+            std::cout << "Extraindo lista de veiculos do servidor" << std::endl;
+            vehiclesjson = json::parse(strVehicles);
+        }
+        else
+        {
+            vehiclesjson = json::parse(std::string(vehicles));
+        }
+
+        std::string strTracks;
+        if (GetTracksFromServer(strTracks)) 
+        {
+            std::cout << "Extraindo lista de pistas do servidor" << std::endl;
+            tracksjson = json::parse(strTracks);
+        }
+        else
+        {
+            tracksjson = json::parse(std::string(tracks));
+        }
 
         json tracklistjson = tracksjson["response"]["list"];
         json vehiclelistjson = vehiclesjson["response"]["list"];
@@ -583,3 +605,68 @@ cleanupCurl:
         fclose(file);
 }
 
+static bool GetVehiclesFromServer(std::string& returnValue)
+{
+
+    CURL* curl = curl_easy_init();
+    struct curl_slist* headers = NULL;
+
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+    curl_easy_setopt(curl, CURLOPT_HTTPAUTH, (long)CURLAUTH_BASIC);
+    curl_easy_setopt(curl, CURLOPT_USERNAME, "");
+    curl_easy_setopt(curl, CURLOPT_PASSWORD, "");
+    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:9000/api/list/vehicles");
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &returnValue);
+
+    auto res = curl_easy_perform(curl);
+    if (res != CURLE_OK)
+        std::cout << "Ocorreu um erro ao tentar consultar os arquivos" << std::endl;
+
+    long httpResponseCode = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpResponseCode);
+
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+
+    if (httpResponseCode == 200)
+        return true;
+
+    return false;
+}
+
+static bool GetTracksFromServer(std::string& returnValue)
+{
+
+    CURL* curl = curl_easy_init();
+    struct curl_slist* headers = NULL;
+
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+    curl_easy_setopt(curl, CURLOPT_HTTPAUTH, (long)CURLAUTH_BASIC);
+    curl_easy_setopt(curl, CURLOPT_USERNAME, "");
+    curl_easy_setopt(curl, CURLOPT_PASSWORD, "");
+    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:9000/api/list/tracks");
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &returnValue);
+
+    auto res = curl_easy_perform(curl);
+    if (res != CURLE_OK)
+        std::cout << "Ocorreu um erro ao tentar consultar os arquivos" << std::endl;
+
+    long httpResponseCode = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpResponseCode);
+
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+
+    if (httpResponseCode == 200)
+        return true;
+
+    return false;
+}
